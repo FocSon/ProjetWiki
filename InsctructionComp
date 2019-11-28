@@ -1,0 +1,13 @@
+//Compilation Pro*C
+
+//Pour précompiler le fichier Pro*C "monfichier.pc", taper dans le terminal
+
+proc code=ANSI_C main.pc
+
+//Vous obtenez, s'il n'y a pas d'erreur de précompilation, un fichier C "monfichier.c".
+
+//Vous pouvez ensuite compiler ce fichier avec gcc
+
+gcc -o main main.c -L$ORACLE_HOME/lib -lclntsh -I$ORACLE_HOME/sdk/include
+
+//Il ne vous reste plus qu'à exécuter
