@@ -1,0 +1,83 @@
+Sujet( Titre (PK),
+	Protege (vaut soit 1 soit 0),
+	createur (par defaut user)
+Tout les sujets et leurs caract
+
+
+Contenu(#Titre (Sujet),
+	Datemodif,
+	Auteur,
+	Texte (Not Null))
+PK : Titre, Datemodif
+Droit : select sur contenu
+sujets et leur contenus
+
+
+Demande(#Titre (Sujet),
+	Datemodif,
+	Demandeur,
+	Texte (Not Null))
+PK : titre,datemodif,demandeur
+Table des demandes de modif
+
+
+Lecture(#Titre (Sujet),
+	Datelecture,
+	Lecteur)
+PK : titre,lecteur,datelecture
+Table qui retiens qui vois quoi
+
+
+Liens(#Titre1 (Sujet),
+	#Titre2 (Sujet))
+PK : titre1,titre2
+Droits : insert
+	 select
+
+
+Theme(Themefils (Sujet)(PK),
+	Themepere (Sujet))
+Droits : insert
+	 select
+Thèmes découlants du thème courant
+
+
+Classification(Titre (Sujet),
+		Theme (Theme(Themefils))
+primary key (titre,theme));
+Droits : insert
+	 select
+Classe les sujets
+
+
+VUE NouveauSujet(select titre, protege from sujet);
+Droits: insert sur nouveausujet
+	select sur sujet
+Création de nouveaux sujets
+
+
+VUE ModificationContenu 
+select titre,texte from contenu 
+where titre in (select titre from sujet where protege=0 or createur=user))
+with check option;
+
+Droits : insert sur ModificationContenu
+Cette vue permet de modifier un contenu sauf si elle est protégé (l'auteur pourras toujours la modifier)
+
+
+VUE EcrireDemande
+(select titre,texte from demande 
+where titre in (select titre from sujet where protege=1 and createur!=user))
+with check option;
+
+Droits : insert
+Crée une demande de modification
+
+
+VUE LireDemande 
+(select * from demande 
+where titre in (select titre from sujet where protege=1 and createur=user));
+
+Droits : select
+	 delete
+Les demandes recues par l'utilisateur
