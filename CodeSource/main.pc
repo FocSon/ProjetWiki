@@ -1,0 +1,106 @@
+#include<stdio.h>
+#include<string.h>
+#include<stdlib.h>
+
+EXEC SQL INCLUDE SQLCA.H;
+
+int codeErreurs(void);
+
+int connexion(void);
+
+int menuPrincipal(void);
+void traitementChoix(int);
+
+//proc code=ANSI_C main.pc
+//gcc -o ../Wiki main.c -L$ORACLE_HOME/lib -lclntsh -I$ORACLE_HOME/sdk/include
+
+int main(void)
+	{
+
+	int choix_menu_principal;
+
+	if(!connexion())
+		{
+		printf("Vous avez echoue trop de fois a vous connecter, degage\n");
+		return 1;
+		}
+
+	printf("\n\nBienvenue sur le Wiki !\n");
+
+	do 	{
+		choix_menu_principal = menuPrincipal();
+		traitementChoix(choix_menu_principal);
+		}while(choix_menu_principal!=4);
+	return 0;
+	}
+
+int codeErreurs(void){
+	if(sqlca.sqlcode < 0){
+		printf("La commande n'a pas marché.\nErreur : %s\n", sqlca.sqlerrm.sqlerrmc);
+		return 1;
+	}
+	return 0;
+}
+
+int connexion(void)
+	{
+
+	EXEC SQL BEGIN DECLARE SECTION;
+	char login[20];
+	char password[20];
+	EXEC SQL END DECLARE SECTION;
+
+	int i=0;
+
+	do {
+		printf("Entrez votre login : ");
+		scanf("%s",&login);
+		printf("Entrez votre mot de passe : ");
+		scanf("%s",&password);
+
+		EXEC SQL CONNECT :login IDENTIFIED BY :password;
+
+		if(!codeErreurs())
+			break;
+
+		i++;
+	} while(i<3);
+
+	if(i<3)
+		{
+		printf("Vous êtes maintenant connecté à la base de donnée sous le login : %s\n", login);
+		return 1;
+		}
+	else
+		return 0;
+	}
+
+int menuPrincipal(void)
+	{
+	int choix;
+	system("clear");
+	do
+		{
+		printf("Menu Principal\n");
+		printf("Veuillez choisir l'action souhaitee :\n");
+		printf("\t1 - Effectuer une recherche\n");
+		printf("\t2 - Créer un sujet\n");
+		printf("\t3 - Modifier un sujet\n");
+		printf("\t4 - Quitter\n");
+
+		printf("--> ");
+		scanf("%d", &choix);
+		system("clear");
+		} while(choix<1 || choix>4);
+	return choix;
+	}
+
+void traitementChoix(int choix)
+	{
+	if(choix==1)
+		recherche();
+	else if(choix==2)
+		creerSujet();
+	else if(choix==3)
+		modifSujet();
+	}
