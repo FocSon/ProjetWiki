@@ -124,7 +124,7 @@ int recherche()
 
 		system("clear");
 		printf("Que voulez vous faire ?\n");
-		faire_menu("Lire un autre article", "Retour au menu principal", "Quitter le programme", " ", " ");
+		faire_menu("Lire un autre article", "Retour au menu principal", " ", " ", " ");
 
 		scanf("%d", &quitter);
 		quitter--;
@@ -185,6 +185,7 @@ int creerSujet()
 		system("clear");
 		printf("Voici le resultat de votre saisie :\n");//on attend validation
 		printf("\nSujet : %s\n\n%s\n", sujet, texte);
+		printf("Que faire :\n");
 		faire_menu("Continuer", "Annuler", " ", " ", " ");
 		scanf("%d",&choix);
 		}while(choix!=1 && choix!=2);
@@ -205,7 +206,7 @@ int creerSujet()
 
 	do{
 		system("clear");
-		printf("Voulez vous lier ce sujet à d'autres sujets ?");
+		printf("Voulez vous lier ce sujet à d'autres sujets ?\n");
 		faire_menu("Non", "Oui", " ", " ", " ");
 		scanf("%d", &choix);
 			if(choix==2)
@@ -218,7 +219,7 @@ int creerSujet()
 			//sinon demande de recommancer
 			nbsujetlies++;
 			}
-		}while(choix!=1 || nbsujetlies<5);
+		}while(choix!=1 && nbsujetlies<5);
 
 	//ajouter les commandes sql : insérer dans sujet le titre, la valeur de protéger, et le pseudo du créateur
 	//ajouter les commandes sql : insérer dans contenu le titre, la date, l'auteur et le texte
