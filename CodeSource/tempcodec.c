@@ -59,9 +59,9 @@ int connexion(void)
 
 	do {
 		printf("Entrez votre login : ");
-		scanf("%s",&login);
+		fgets(login,sizeof(login),stdin);
 		printf("Entrez votre mot de passe : ");
-		scanf("%s",&password);
+		fgets(password,sizeof(password),stdin);
 
 //		EXEC SQL CONNECT :login IDENTIFIED BY :password;
 
@@ -117,7 +117,8 @@ int recherche()
 		system("clear");
 		printf("Quel sujet voulez vous rechercher ?\n");
 		printf("--> ");
-		scanf("%s",&sujet);
+		while(getchar()!='\n'){}
+		fgets(sujet,sizeof(sujet),stdin);
 		
 		//commande en sql de recherche du sujet
 		//recupérer le nb de resultat
@@ -155,18 +156,19 @@ int creerSujet()
 	system("clear");
 	printf("Entrez le sujet sur lequel porteras votre article\n");//On récupère le sujet
 	printf("--> ");
-	scanf("%s",&sujet);
+	while(getchar()!='\n'){}
+	fgets(sujet,sizeof(sujet),stdin);
 
 	for(curseur=0; curseur<500000; curseur++)
 		texte[curseur]='\0';
 	
-	printf("\n\nEntrez le texte à ajouter dans l'article (combinaison .. pour arrêter la saisie et emplacez les expaces par des _) :\n");
+	printf("\n\nEntrez le texte à ajouter dans l'article (combinaison .. pour arrêter la saisie) :\n");
 
 	for(int nblignes=0;nblignes<100 && !sortir;nblignes++)
 		{
 		for(curseur=0;curseur<5000; curseur++)//on récupère la ligne
 			tempTexte[curseur]='\0';
-		scanf("%s",&tempTexte);
+		fgets(tempTexte,sizeof(tempTexte),stdin);
 		for(curseur=0;curseurFi<500000 && tempTexte[curseur]!='\0' && curseur<5000 ; curseurFi++)//On verifie sue .. n'as pas ete saisi a la fin
 			{
 			if(tempTexte[curseur]=='.' && tempTexte[curseur-1]=='.')
@@ -177,9 +179,11 @@ int creerSujet()
 			texte[curseurFi]=tempTexte[curseur];//on associe la ligne a la suite du texte final
 			curseur++;
 			}
-		texte[curseurFi]='\n';//on ajoute un retour à la ligne a la fin de la ligne
+		texte[curseurFi-1]=' ';//on ajoute un espace pour retirer le retour à la ligne
+		texte[curseurFi]='\n';//on ajoute un retour à la ligne a la fin de la ligne pour retirer le \0
 		curseurFi++;
 		}
+	texte[curseurFi-2]='.';//ajouter un point à la place de l'espace sur la dernière ligne.
 
 	do{
 		system("clear");
@@ -202,7 +206,9 @@ int creerSujet()
 
 	system("clear");
 	printf("Entrez le thème de votre ebauche : ");
-	scanf("%s", theme);
+	while(getchar()!='\n'){}
+	fgets(theme,sizeof(theme),stdin);
+
 
 	do{
 		system("clear");
@@ -213,7 +219,8 @@ int creerSujet()
 			{
 			system("clear");
 			printf("Vous avez deja lié %d sujets.\nVous pouvez lier jusqu'à 5 sujets.\n\nEntrez le sujet que vous souhaitez lier : ",nbsujetlies);
-			scanf("%s",&sujetliens[nbsujetlies]);
+			while(getchar()!='\n'){}
+			fgets(sujetliens[nbsujetlies],sizeof(sujetliens[nbsujetlies]),stdin);
 			//ajouter les commandes sql : verifier que sujet exite
 			//si exite alors demander de valider le choix
 			//sinon demande de recommancer
