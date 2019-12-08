@@ -9,10 +9,11 @@ int codeErreurs(void);
 int connexion(void);
 
 int menuPrincipal(void);
-void traitementChoix(int*);
+void traitementChoix(int);
 
-int recherche(void);
-int creerSujet(void);
+void recherche(void);
+void creerSujet(void);
+//void modifSujet(void);
 
 void faire_menu(char*, char*, char*, char*, char*);
 
@@ -34,7 +35,7 @@ int main(void)
 
 	do 	{
 		choix_menu_principal = menuPrincipal();
-		traitementChoix(&choix_menu_principal);
+		traitementChoix(choix_menu_principal);
 		}while(choix_menu_principal!=4);
 	return 0;
 	}
@@ -96,18 +97,18 @@ int menuPrincipal(void)
 	return choix;
 	}
 
-void traitementChoix(int *choix)
+void traitementChoix(int choix)
 	{
-	if(*choix==1)
+	if(choix==1)
 		recherche();
-	else if(*choix==2)
+	else if(choix==2)
 		creerSujet();
 	//else if(choix==3)
 	//	modifSujet();
 	
 	}
 	
-int recherche()
+void recherche()
 	{
 	int quitter=0;
 	char sujet[255];
@@ -131,10 +132,9 @@ int recherche()
 		quitter--;
 		system("clear");
 		}
-	return quitter;
 	}
 	
-int creerSujet()
+void creerSujet()
 	{
 	char sujet[255];
 	char sujetliens[5][255];
@@ -193,40 +193,40 @@ int creerSujet()
 		faire_menu("Continuer", "Annuler", " ", " ", " ");
 		scanf("%d",&choix);
 		}while(choix!=1 && choix!=2);
-	if(choix==2)
-		return 0;
-
-	do{	
-		system("clear");
-		printf("Voulez vous protéger le contenu de ce topic ?\n");//on demande si le contenu doit etre protégé a la modif
-		faire_menu("Non", "Oui", " ", " ", " ");
-		scanf("%d", &proteger);
-		}while(proteger!=1 && proteger!=2);
-	proteger--;
-
-	system("clear");
-	printf("Entrez le thème de votre ebauche : ");
-	while(getchar()!='\n'){}
-	fgets(theme,sizeof(theme),stdin);
-
-
-	do{
-		system("clear");
-		printf("Voulez vous lier ce sujet à d'autres sujets ?\n");
-		faire_menu("Non", "Oui", " ", " ", " ");
-		scanf("%d", &choix);
-			if(choix==2)
-			{
+	if(choix!=2)
+		{
+		do{	
 			system("clear");
-			printf("Vous avez deja lié %d sujets.\nVous pouvez lier jusqu'à 5 sujets.\n\nEntrez le sujet que vous souhaitez lier : ",nbsujetlies);
-			while(getchar()!='\n'){}
-			fgets(sujetliens[nbsujetlies],sizeof(sujetliens[nbsujetlies]),stdin);
-			//ajouter les commandes sql : verifier que sujet exite
-			//si exite alors demander de valider le choix
-			//sinon demande de recommancer
-			nbsujetlies++;
-			}
-		}while(choix!=1 && nbsujetlies<5);
+			printf("Voulez vous protéger le contenu de ce topic ?\n");//on demande si le contenu doit etre protégé a la modif
+			faire_menu("Non", "Oui", " ", " ", " ");
+			scanf("%d", &proteger);
+			}while(proteger!=1 && proteger!=2);
+		proteger--;
+
+		system("clear");
+		printf("Entrez le thème de votre ebauche : ");
+		while(getchar()!='\n'){}
+		fgets(theme,sizeof(theme),stdin);
+
+
+		do{
+			system("clear");
+			printf("Voulez vous lier ce sujet à d'autres sujets ?\n");
+			faire_menu("Non", "Oui", " ", " ", " ");
+			scanf("%d", &choix);
+				if(choix==2)
+				{
+				system("clear");
+				printf("Vous avez deja lié %d sujets.\nVous pouvez lier jusqu'à 5 sujets.\n\nEntrez le sujet que vous souhaitez lier : ",nbsujetlies);
+				while(getchar()!='\n'){}
+				fgets(sujetliens[nbsujetlies],sizeof(sujetliens[nbsujetlies]),stdin);
+				//ajouter les commandes sql : verifier que sujet exite
+				//si exite alors demander de valider le choix
+				//sinon demande de recommancer
+				nbsujetlies++;
+				}
+			}while(choix!=1 && nbsujetlies<5);
+		}
 
 	//ajouter les commandes sql : insérer dans sujet le titre, la valeur de protéger, et le pseudo du créateur
 	//ajouter les commandes sql : insérer dans contenu le titre, la date, l'auteur et le texte
@@ -237,9 +237,8 @@ int creerSujet()
 
 	//ajouter les commandes sql : insérer dans classification le sujet et le thème
 
-	return 0;
 	}
-
+ 
 void faire_menu(char* c1, char* c2, char* c3, char* c4, char* c5)
 	{
 	if(c1[0]!=' ')
