@@ -11,6 +11,12 @@ int connexion(void);
 int menuPrincipal(void);
 void traitementChoix(int);
 
+void recherche(void);
+void creerSujet(void);
+//void modifSujet(void);
+
+void faire_menu(char*, char*, char*, char*, char*);
+
 //proc code=ANSI_C main.pc
 //gcc -o ../Wiki main.c -L$ORACLE_HOME/lib -lclntsh -I$ORACLE_HOME/sdk/include
 
@@ -36,7 +42,7 @@ int main(void)
 
 int codeErreurs(void){
 	if(sqlca.sqlcode < 0){
-		printf("La commande n'a pas marché.\nErreur : %s\n", sqlca.sqlerrm.sqlerrmc);
+		printf("Erreur : %s\n", sqlca.sqlerrm.sqlerrmc);
 		return 1;
 	}
 	return 0;
@@ -44,7 +50,6 @@ int codeErreurs(void){
 
 int connexion(void)
 	{
-
 	EXEC SQL BEGIN DECLARE SECTION;
 	char login[20];
 	char password[20];
@@ -81,14 +86,10 @@ int menuPrincipal(void)
 	system("clear");
 	do
 		{
-		printf("Menu Principal\n");
+		printf("Menu Principal\n\n");
 		printf("Veuillez choisir l'action souhaitee :\n");
-		printf("\t1 - Effectuer une recherche\n");
-		printf("\t2 - Créer un sujet\n");
-		printf("\t3 - Modifier un sujet\n");
-		printf("\t4 - Quitter\n");
+		faire_menu("Effectuer une recherche", "Creer un sujet", "Modifier un sujet", "Quitter", " ");
 
-		printf("--> ");
 		scanf("%d", &choix);
 		system("clear");
 		} while(choix<1 || choix>4);
@@ -101,6 +102,320 @@ void traitementChoix(int choix)
 		recherche();
 	else if(choix==2)
 		creerSujet();
-	else if(choix==3)
-		modifSujet();
+	//else if(choix==3)
+	//	modifSujet();
+	
+	}
+	
+void recherche()
+	{
+	int quitter=0;
+	int choix=0;
+
+	int curseurDim1=0;
+	int curseurDim2=0;
+	int tour=1;
+
+	char resultatRecherche[3][255];
+
+	EXEC SQL BEGIN DECLARE SECTION;
+	char titre[255];
+	char titreTrouve[255];
+	short i_titre;
+	char theme[255];
+	EXEC SQL END DECLARE SECTION;
+
+	while(!quitter)
+		{
+		do{
+			system("clear");
+			printf("Que faire ?\n");
+			faire_menu("Rechercher parmis tout les titres", "Rechercher à l'aide d'un titre precis", "Rechercher les titres correspondant a un theme", "Retour au menu principal", " ");
+			scanf("%d",&choix);
+			}while(choix<1 || choix>4);
+
+		system("clear");
+
+		if(choix==1 || choix==2)
+			{
+			if(choix==2)//si choix == 2 alors on demande le titre a chercher
+				{
+				printf("Quel titre voulez vous rechercher ?\n");
+				printf("--> ");
+				while(getchar()!='\n'){}
+				fgets(titre,sizeof(titre),stdin);
+				system("clear");
+
+				for(curseurDim1=0; curseurDim1<255; curseurDim1++)
+					if(titre[curseurDim1]=='\n')
+						{
+						titre[curseurDim1]='%';//on ajoute % a la fin pour chercher de facon plus large
+						titre[curseurDim1+1]='\0';
+						break;
+						}
+				}
+			else if(choix==1)//on recherche juste % si on a fais le choix 1
+				{
+				titre[0]='%';
+				titre[1]='\0';
+				}
+
+			int nbsujet=0;
+			EXEC SQL SELECT COUNT(titre) INTO nbsujet FROM wiki.sujet WHERE titre LIKE :titre;
+			if(codeErreurs())
+				break;
+
+			if(nbsujet==0)
+				printf("Le sujet n'existe pas\n\n");
+
+			else if(nbsujet>1)//si plusieurs sujets, on laisse choisir
+				{
+				EXEC SQL DECLARE afficher_titres CURSOR FOR SELECT titre FROM wiki.sujet WHERE titre LIKE :titre;//declarer curseur
+				if(codeErreurs())
+					break;
+
+				EXEC SQL OPEN afficher_titres;																	//Ouvrir curseur
+				if(codeErreurs())
+					break;
+
+				EXEC SQL FETCH afficher_titres INTO :titreTrouve:i_titre;										//derouller curseur
+				if(codeErreurs())
+					break;
+				do{
+					for(curseurDim2=0; curseurDim2<3; curseurDim2++)
+						resultatRecherche[curseurDim2][0]=' ';
+					curseurDim2=0;
+					while((sqlca.sqlcode>=0) && (sqlca.sqlcode!=1403) && curseurDim2<3)
+						{
+						for(curseurDim1=0; curseurDim1<255; curseurDim1++)
+							resultatRecherche[curseurDim2][curseurDim1]=titreTrouve[curseurDim1];
+						curseurDim2++;
+
+						EXEC SQL FETCH afficher_titres INTO :titreTrouve:i_titre;
+						if(codeErreurs())
+							break;
+						}
+					tour++;
+					do{
+						printf("Voici les resultats de la recherche :\n");
+						faire_menu(resultatRecherche[0], resultatRecherche[1], resultatRecherche[2], "Voir la suite..", "Quitter");
+						scanf("%d",&choix);
+						system("clear");
+
+						if(choix==4 && resultatRecherche[2][0]==' ')
+							choix=5;
+
+						}while(choix<1 || choix>5);
+
+					}while(choix==4);
+					for(curseurDim1=0;curseurDim1<255;curseurDim1++)
+						titre[curseurDim1]=resultatRecherche[choix][curseurDim1];
+				}
+			}
+
+		else if(choix==3)
+			{
+			printf("Quel theme voulez vous rechercher ?\n");
+			printf("--> ");
+			while(getchar()!='\n'){}
+			fgets(theme,sizeof(theme),stdin);
+			system("clear");
+
+			for(curseurDim1=0; curseurDim1<255; curseurDim1++)
+				if(theme[curseurDim1]=='\n')
+					{
+					theme[curseurDim1]='%';//on ajoute % a la fin pour chercher de facon plus large
+					theme[curseurDim1+1]='\0';
+					break;
+					}
+
+			int nbthemes=1;
+			EXEC SQL SELECT COUNT(themepere) INTO nbthemes FROM wiki.theme WHERE themepere LIKE :theme;
+			if(codeErreurs())
+				break;
+
+			if(nbthemes==0)
+				printf("Le theme n'existe pas\n\n");
+			else if(nbthemes>1)
+				printf("Plusieurs thèmes trouvés, recherche trop large\n\n");
+
+			else
+				{
+				EXEC SQL DECLARE titres_lies CURSOR FOR SELECT titre FROM wiki.classification WHERE theme LIKE :theme;//declarer curseur
+				if(codeErreurs())
+					break;
+
+				EXEC SQL OPEN titres_lies;																	//Ouvrir curseur
+				if(codeErreurs())
+					break;
+
+				EXEC SQL FETCH titres_lies INTO :titreTrouve:i_titre;										//derouller curseur
+				if(codeErreurs())
+					break;
+				do{
+					for(curseurDim2=0; curseurDim2<3; curseurDim2++)
+						resultatRecherche[curseurDim2][0]=' ';
+					curseurDim2=0;
+					while((sqlca.sqlcode>=0) && (sqlca.sqlcode!=1403) && curseurDim2<3)
+						{
+						for(curseurDim1=0; curseurDim1<255; curseurDim1++)
+							resultatRecherche[curseurDim2][curseurDim1]=titreTrouve[curseurDim1];
+						curseurDim2++;
+
+						EXEC SQL FETCH titres_lies INTO :titreTrouve:i_titre;
+						if(codeErreurs())
+							break;
+						}
+					tour++;
+					do{
+						printf("Voici les titres lies au theme choisit :\n");
+						faire_menu(resultatRecherche[0], resultatRecherche[1], resultatRecherche[2], "Voir la suite..", "Quitter");
+						scanf("%d",&choix);
+						system("clear");
+
+						if(choix==4 && resultatRecherche[2][0]==' ')
+							choix=5;
+
+						}while(choix<1 || choix>5);
+
+					}while(choix==4);
+					for(curseurDim1=0;curseurDim1<255;curseurDim1++)
+						titre[curseurDim1]=resultatRecherche[choix][curseurDim1];
+				}
+			}
+
+		else if(choix==4)
+			quitter=1;
+		}
+	}
+/*		printf("Quel titre voulez vous rechercher ?\n");
+		printf("--> ");
+		while(getchar()!='\n'){}
+		fgets(titre,sizeof(titre),stdin);*/
+	
+void creerSujet()
+	{
+	char sujet[255];
+	char sujetliens[5][255];
+	int nbsujetlies=0;
+
+	char tempTexte[5000];
+	char texte[500000];
+
+	char theme[255];
+
+	int proteger=0;
+
+	int curseur=0;
+	int curseurFi=0;
+
+	int sortir=0;
+	int choix=0;
+	
+	int nblignes=0;
+
+	system("clear");
+	printf("Entrez le sujet sur lequel porteras votre article\n");//On récupère le sujet
+	printf("--> ");
+	while(getchar()!='\n'){}
+	fgets(sujet,sizeof(sujet),stdin);
+
+	for(curseur=0; curseur<500000; curseur++)
+		texte[curseur]='\0';
+	
+	printf("\n\nEntrez le texte à ajouter dans l'article (combinaison .. pour arrêter la saisie) :\n");
+
+	for(nblignes=0 ; nblignes<100 && sortir==0 ; nblignes++)
+		{
+		for(curseur=0;curseur<5000; curseur++)//on récupère la ligne
+			tempTexte[curseur]='\0';
+		fgets(tempTexte,sizeof(tempTexte),stdin);
+		for(curseur=0;curseurFi<500000 && tempTexte[curseur]!='\0' && curseur<5000 ; curseurFi++)//On verifie sue .. n'as pas ete saisi a la fin
+			{
+			if(tempTexte[curseur]=='.' && tempTexte[curseur-1]=='.')
+				{
+				sortir=1;//si oui on sort
+				break;
+				}
+			texte[curseurFi]=tempTexte[curseur];//on associe la ligne a la suite du texte final
+			curseur++;
+			}
+		texte[curseurFi-1]=' ';//on ajoute un espace pour retirer le retour à la ligne
+		texte[curseurFi]='\n';//on ajoute un retour à la ligne a la fin de la ligne pour retirer le \0
+		curseurFi++;
+		}
+	texte[curseurFi-2]='.';//ajouter un point à la place de l'espace sur la dernière ligne.
+
+	do{
+		//system("clear");
+		printf("Voici le resultat de votre saisie :\n");//on attend validation
+		printf("\nSujet : %s\n\n%s\n", sujet, texte);
+		printf("Que faire :\n");
+		faire_menu("Continuer", "Annuler", " ", " ", " ");
+		scanf("%d",&choix);
+		}while(choix!=1 && choix!=2);
+	if(choix!=2)
+		{
+		do{	
+			system("clear");
+			printf("Voulez vous protéger le contenu de ce topic ?\n");//on demande si le contenu doit etre protégé a la modif
+			faire_menu("Non", "Oui", " ", " ", " ");
+			scanf("%d", &proteger);
+			}while(proteger!=1 && proteger!=2);
+		proteger--;
+
+		system("clear");
+		printf("Entrez le thème de votre ebauche : ");
+		while(getchar()!='\n'){}
+		fgets(theme,sizeof(theme),stdin);
+
+
+		do{
+			system("clear");
+			printf("Voulez vous lier ce sujet à d'autres sujets ?\n");
+			faire_menu("Non", "Oui", " ", " ", " ");
+			scanf("%d", &choix);
+				if(choix==2)
+				{
+				system("clear");
+				printf("Vous avez deja lié %d sujets.\nVous pouvez lier jusqu'à 5 sujets.\n\nEntrez le sujet que vous souhaitez lier : ",nbsujetlies);
+				while(getchar()!='\n'){}
+				fgets(sujetliens[nbsujetlies],sizeof(sujetliens[nbsujetlies]),stdin);
+				//ajouter les commandes sql : verifier que sujet exite
+				//si exite alors demander de valider le choix
+				//sinon demande de recommancer
+				nbsujetlies++;
+				}
+			}while(choix!=1 && nbsujetlies<5);
+		}
+
+	//ajouter les commandes sql : insérer dans sujet le titre, la valeur de protéger, et le pseudo du créateur
+	//ajouter les commandes sql : insérer dans contenu le titre, la date, l'auteur et le texte
+	//ajouter les commandes sql : insérer dans liens le titre du sujet et le titre du sujet lié
+
+	//pas sur du fonctionnement de la table themes donc a voir :
+	//ajouter les commandes sql : insérer dans thème le thème père et le thème courant OU le thème courant et son thème fils si c'est lui le papa
+
+	//ajouter les commandes sql : insérer dans classification le sujet et le thème
+
+	}
+ 
+void faire_menu(char* c1, char* c2, char* c3, char* c4, char* c5)
+	{
+	int curseur=0;
+	if(c1[0]!=' ')
+		printf("\t1 - %s\n", c1);
+
+	if(c2[0]!=' ')
+		printf("\t2 - %s\n", c2);
+
+	if(c3[0]!=' ')
+		printf("\t3 - %s\n", c3);
+
+	if(c4[0]!=' ')
+		printf("\t4 - %s\n", c4);
+
+	if(c5[0]!=' ')
+		printf("\t5 - %s\n", c5);
+	printf("--> ");
 	}
