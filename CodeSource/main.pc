@@ -123,6 +123,9 @@ void recherche()
 	char titreTrouve[255];
 	short i_titre;
 	char theme[255];
+	char texte[4000000];
+	char auteur[10];
+	int nbresultat=0;
 	EXEC SQL END DECLARE SECTION;
 
 	while(!quitter)
@@ -130,9 +133,9 @@ void recherche()
 		do{
 			system("clear");
 			printf("Que faire ?\n");
-			faire_menu("Rechercher parmis tout les titres", "Rechercher à l'aide d'un titre precis", "Rechercher les titres correspondant a un theme", "Retour au menu principal", " ");
+			faire_menu("Rechercher parmis tout les titres", "Rechercher à l'aide d'un titre precis", "Rechercher les titres correspondant a un theme", "Rechercher les sujets d'un auteur", "Retour au menu principal");
 			scanf("%d",&choix);
-			}while(choix<1 || choix>4);
+			}while(choix<1 || choix>5);
 
 		system("clear");
 
@@ -160,15 +163,14 @@ void recherche()
 				titre[1]='\0';
 				}
 
-			int nbsujet=0;
-			EXEC SQL SELECT COUNT(titre) INTO nbsujet FROM wiki.sujet WHERE titre LIKE :titre;
+			EXEC SQL SELECT COUNT(titre) INTO :nbresultat FROM wiki.sujet WHERE titre LIKE :titre;
 			if(codeErreurs())
 				break;
 
-			if(nbsujet==0)
+			if(nbresultat==0)
 				printf("Le sujet n'existe pas\n\n");
 
-			else if(nbsujet>1)//si plusieurs sujets, on laisse choisir
+			else if(nbresultat>1)//si plusieurs sujets, on laisse choisir
 				{
 				EXEC SQL DECLARE afficher_titres CURSOR FOR SELECT titre FROM wiki.sujet WHERE titre LIKE :titre;//declarer curseur
 				if(codeErreurs())
@@ -208,8 +210,11 @@ void recherche()
 						}while(choix<1 || choix>5);
 
 					}while(choix==4);
-					for(curseurDim1=0;curseurDim1<255;curseurDim1++)
-						titre[curseurDim1]=resultatRecherche[choix][curseurDim1];
+					if(choix<4)
+						{
+						for(curseurDim1=0;curseurDim1<255;curseurDim1++)
+							titre[curseurDim1]=resultatRecherche[choix-1][curseurDim1];
+						}
 				}
 			}
 
@@ -229,14 +234,13 @@ void recherche()
 					break;
 					}
 
-			int nbthemes=1;
-			EXEC SQL SELECT COUNT(themepere) INTO nbthemes FROM wiki.theme WHERE themepere LIKE :theme;
+			EXEC SQL SELECT COUNT(themepere) INTO :nbresultat FROM wiki.theme WHERE themepere LIKE :theme;
 			if(codeErreurs())
 				break;
 
-			if(nbthemes==0)
+			if(nbresultat==0)
 				printf("Le theme n'existe pas\n\n");
-			else if(nbthemes>1)
+			else if(nbresultat>1)
 				printf("Plusieurs thèmes trouvés, recherche trop large\n\n");
 
 			else
@@ -279,13 +283,103 @@ void recherche()
 						}while(choix<1 || choix>5);
 
 					}while(choix==4);
-					for(curseurDim1=0;curseurDim1<255;curseurDim1++)
-						titre[curseurDim1]=resultatRecherche[choix][curseurDim1];
+					if(choix<4)
+						{
+						for(curseurDim1=0;curseurDim1<255;curseurDim1++)
+							titre[curseurDim1]=resultatRecherche[choix-1][curseurDim1];
+						}
+				}
+			}
+		else if(choix==4)
+			{
+			printf("De quel auteur voulez vous voir les ebauches ?\n");
+			printf("--> ");
+			while(getchar()!='\n'){}
+			fgets(auteur,sizeof(auteur),stdin);
+			system("clear");
+
+			for(curseurDim1=0; curseurDim1<8 && auteur[curseurDim1]!='\n'; curseurDim1++){}
+			printf("%d",curseurDim1);
+			auteur[curseurDim1+1]='%';
+			auteur[curseurDim1+2]='\0';
+
+			while(curseurDim1>0)
+				{
+				auteur[curseurDim1]=auteur[curseurDim1-1];
+				curseurDim1--;
+				}
+
+			auteur[curseurDim1]='%';
+
+			printf("%s\n", auteur);
+
+
+			EXEC SQL SELECT COUNT(createur) INTO :nbresultat FROM WIKI.SUJET WHERE createur LIKE :auteur;
+
+			if(nbresultat==0)
+				printf("ERREUR : Aucun auteur trouve\n");
+			//else if(nbresultat>1)
+				//printf("ERREUR : Plusieurs auteurs trouvés");
+			else
+				{
+				EXEC SQL DECLARE titres_auteur CURSOR FOR SELECT titre FROM wiki.sujet WHERE createur LIKE :auteur;//declarer curseur
+				if(codeErreurs())
+					break;
+
+				EXEC SQL OPEN titres_auteur;																	//Ouvrir curseur
+				if(codeErreurs())
+					break;
+
+				EXEC SQL FETCH titres_auteur INTO :titreTrouve:i_titre;										//derouller curseur
+				if(codeErreurs())
+					break;
+				do{
+					for(curseurDim2=0; curseurDim2<3; curseurDim2++)
+						resultatRecherche[curseurDim2][0]=' ';
+					curseurDim2=0;
+					while((sqlca.sqlcode>=0) && (sqlca.sqlcode!=1403) && curseurDim2<3)
+						{
+						for(curseurDim1=0; curseurDim1<255; curseurDim1++)
+							resultatRecherche[curseurDim2][curseurDim1]=titreTrouve[curseurDim1];
+						curseurDim2++;
+
+						EXEC SQL FETCH titres_auteur INTO :titreTrouve:i_titre;
+						if(codeErreurs())
+							break;
+						}
+					tour++;
+					do{
+						printf("Voici les ebauches de l'auteur (%s) :\n", auteur);
+						faire_menu(resultatRecherche[0], resultatRecherche[1], resultatRecherche[2], "Voir la suite..", "Quitter");
+						scanf("%d",&choix);
+						system("clear");
+
+						if(choix==4 && resultatRecherche[2][0]==' ')
+							choix=5;
+
+						}while(choix<1 || choix>5);
+
+					}while(choix==4);
+					if(choix<4)
+						{
+						for(curseurDim1=0;curseurDim1<255;curseurDim1++)
+							titre[curseurDim1]=resultatRecherche[choix-1][curseurDim1];
+						}	
 				}
 			}
 
-		else if(choix==4)
+
+		else if(choix==5)
 			quitter=1;
+
+		if(!quitter)
+			{
+			EXEC SQL SELECT texte INTO :texte FROM wiki.contenu WHERE titre LIKE :titre;
+			if(codeErreurs())
+				break;
+			printf("%s\n",texte);
+			system("sleep 30");
+			}
 		}
 	}
 /*		printf("Quel titre voulez vous rechercher ?\n");
